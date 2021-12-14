@@ -36,7 +36,8 @@ def mail_facturas(mail_from,pass_from):
     l_distribucion = []
     for valor in range(2,ultimafiladelws2+1):
         valor_ = str(ws2.cell(row=valor,column=1).value)
-        l_distribucion.append(valor_)
+        if valor_ != 'None' and valor_ != None:
+            l_distribucion.append(valor_)
     
     print(f' Lista Distribucion - facturasgenerales@scienza.com.ar: {l_distribucion}')
 
@@ -74,14 +75,17 @@ def mail_facturas(mail_from,pass_from):
                 lista_proveedores.append(str(l_proveedor[i]))
                 usuario_anterior = l_usuario[i]
         elif l_usuario[i] != usuario_anterior: # enviar mail si el usuario cambia. 
-            print(f'Usuario: {set(lista_usuario)} - facturas: {len(lista_usuario)}')
+            print(f'Usuario: {set(lista_usuario)} - facturas enviadas: {len(lista_usuario)}')
             cuerpo_mail = generar_texto(lista_usuario[0], lista_facturas,lista_proveedores,lista_fe_emision,)
             l_cc = []
             l_cc.append(l_mail2_cc[i-1])
             l_cc_y_distribucion =  l_cc + l_distribucion
             enviarmail(pass_from, mail_from, l_mail1_des[i-1],l_cc_y_distribucion,"Recepcion Facturas",cuerpo_mail)     
             print(f' - Mail enviado a destinatario {l_mail1_des[i-1]} - responsable: {l_mail2_cc[i-1]} ')
-            ws.cell(row=l_fila[i-1],column=13).value= 'Enviado'
+
+            if l_usuario[i-1] != 'None' and l_usuario[i-1] != None and lista_facturas != 'None' and lista_facturas!= None:
+                ws.cell(row=l_fila[i-1],column=13).value= f'Facturas enviadas a {l_usuario[i-1]}: {len(lista_facturas)}'
+
             usuario_anterior = l_usuario[i]
             lista_facturas = [str(l_numero[i])]
             lista_fe_emision = [l_fecha_de_emision[i]]
