@@ -7,7 +7,6 @@ from tkinter import messagebox
 from enviar_mail import enviarmail
 from pruebas import generar_texto
 
-
 def mail_facturas(mail_from,pass_from):
         
     user=getuser()
@@ -15,7 +14,6 @@ def mail_facturas(mail_from,pass_from):
     wb = openpyxl.load_workbook(pathagenda)
     ws = wb["Pendientes"]
     ws2 = wb["ListaDist"]
-    
     ultimafiladelws=len(ws['A'])
     ultimafiladelws2=len(ws2['A'])
     l_fecha_derecepcion=[]
@@ -30,7 +28,7 @@ def mail_facturas(mail_from,pass_from):
     l_mail1_des=[]
     l_mail2_cc=[]
     l_mail3_cc=[]
-    l_enviar=[]
+    l_enviar_leido=[]
     #l_textos=[]   
 
     l_distribucion = []
@@ -38,12 +36,12 @@ def mail_facturas(mail_from,pass_from):
         valor_ = str(ws2.cell(row=valor,column=1).value)
         if valor_ != 'None' and valor_ != None:
             l_distribucion.append(valor_)
-    
+    print("--------------------------------------------------------------------------------------------------------------")
     print(f' Lista Distribucion - facturasgenerales@scienza.com.ar: {l_distribucion}')
+    print("--------------------------------------------------------------------------------------------------------------")
 
-    ### --- TOMAR LOS DATOS DEL EXCEL --- ###
     for dato in range(2,ultimafiladelws+1): 
-        if dato==None:
+        if dato==None or dato =='None' or dato =='':
             continue
         else:
             l_fecha_derecepcion.append(ws.cell(row=dato,column=1).value)
@@ -57,7 +55,7 @@ def mail_facturas(mail_from,pass_from):
             l_mail1_des.append(ws.cell(row=dato,column=9).value)
             l_mail2_cc.append(ws.cell(row=dato,column=10).value)
             l_fila.append(ws.cell(row=dato,column=11).value)
-            l_enviar.append(ws.cell(row=dato,column=12).value)
+            l_enviar_leido.append(ws.cell(row=dato,column=12).value)
             #l_textos.append(ws.cell(row=dato,column=13).internal_value)
     
     usuario_anterior = 0
@@ -65,65 +63,76 @@ def mail_facturas(mail_from,pass_from):
     lista_fe_emision = []
     lista_proveedores = []
     lista_usuario = []
+    lista_enviar = []
+    lista_enviar='Si'
 
     for i in range(0,len(l_fecha_derecepcion)): 
-        if l_usuario[i] == usuario_anterior or usuario_anterior == 0 or usuario_anterior=='':
-            if l_enviar[i]=="Si":
-                lista_usuario.append(str(l_usuario[i]))
-                lista_facturas.append(str(l_numero[i]))
-                lista_fe_emision.append(str(l_fecha_de_emision[i]))
-                lista_proveedores.append(str(l_proveedor[i]))
-                usuario_anterior = l_usuario[i]
-        elif l_usuario[i] != usuario_anterior: # enviar mail si el usuario cambia. 
-            print(f'Usuario: {set(lista_usuario)} - facturas enviadas: {len(lista_usuario)}')
-            cuerpo_mail = generar_texto(lista_usuario[0], lista_facturas,lista_proveedores,lista_fe_emision,)
-            l_cc = []
-            l_cc.append(l_mail2_cc[i-1])
-            l_cc_y_distribucion =  l_cc + l_distribucion
-            enviarmail(pass_from, mail_from, l_mail1_des[i-1],l_cc_y_distribucion,"Recepcion Facturas",cuerpo_mail)     
-            print(f' - Mail enviado a destinatario {l_mail1_des[i-1]} - responsable: {l_mail2_cc[i-1]} ')
-
+        usuario_leido = l_usuario[i]
+        if usuario_leido == usuario_anterior or usuario_anterior == 0 or usuario_anterior=='':
+            if l_enviar_leido[i] =="Si":
+                if lista_enviar == 'Si':
+                    lista_usuario.append(str(usuario_leido))
+                    lista_facturas.append(str(l_numero[i]))
+                    lista_fe_emision.append(str(l_fecha_de_emision[i]))
+                    lista_proveedores.append(str(l_proveedor[i]))
+                    usuario_anterior = usuario_leido
+                else:   
+                    lista_enviar = l_enviar_leido[i]
+                            
+        elif usuario_leido != usuario_anterior: # enviar mail si el usuario cambia. 
+            print(f' Usuario: {set(lista_usuario)} - facturas a enviar: {len(lista_facturas)} [{lista_facturas}]')
+            if lista_usuario != []:
+                cuerpo_mail = generar_texto(lista_usuario[0], lista_facturas,lista_proveedores,lista_fe_emision,)
+                l_cc = []
+                l_cc.append(l_mail2_cc[i-1])
+                l_cc_y_distribucion =  l_cc + l_distribucion
+                enviarmail(pass_from, mail_from, l_mail1_des[i-1],l_cc_y_distribucion,"Recepcion Facturas",cuerpo_mail)     
+                print(f' --- enviado a destinatario {l_mail1_des[i-1]} - responsable: {l_mail2_cc[i-1]} ')
             if l_usuario[i-1] != 'None' and l_usuario[i-1] != None and lista_facturas != 'None' and lista_facturas!= None:
-                ws.cell(row=l_fila[i-1],column=13).value= f'Facturas enviadas a {l_usuario[i-1]}: {len(lista_facturas)}'
+                ws.cell(row=l_fila[i-1],column=13).value= f'Facturas enviadas a {l_usuario[i-1]}: {len(lista_facturas)} - nro fact: {lista_facturas}'
+            if l_enviar_leido[i] == 'Si':
+                usuario_anterior = l_usuario[i]
+                lista_facturas = [str(l_numero[i])]
+                lista_fe_emision = [l_fecha_de_emision[i]]
+                lista_proveedores = [l_proveedor[i]]
+                lista_usuario = [l_usuario[i]]
+                lista_enviar = l_enviar_leido[i]
+            else:
+                usuario_anterior = l_usuario[i]
+                lista_facturas = []
+                lista_fe_emision = []
+                lista_proveedores = []
+                lista_usuario = []
+                #lista_enviar = l_enviar_leido[i]
 
-            usuario_anterior = l_usuario[i]
-            lista_facturas = [str(l_numero[i])]
-            lista_fe_emision = [l_fecha_de_emision[i]]
-            lista_proveedores = [l_proveedor[i]]
-            lista_usuario = [l_usuario[i]]
-        
     wb.save(pathagenda)
     wb.close()
-#--------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
 
-# contra='Chewie2019!'
-# emisor='ldelgado@scienza.com.ar'
+#mail_facturas('ldelgado@scienza.com.ar','Chewie2019!0707')
 
-# cc = ['lucianodelgado92@gmail.com','oyp@scienza.com.ar']
-# destino ='lucianodelgado92@hotmail.com'
 
-# asunto = 'PRUEBA'
-# cuerpo = 'hola hola hola'
+######################################################################################################
+########################################## INTERFAZ GRAFICA ##########################################
+######################################################################################################
+root = tk.Tk()
+root.geometry('300x125')
+root.title('OyP - Envio masivo - 2.0')
+root.config(bg='blue')
+label_from=tk.Label(root, text="Ingrese su mail y contraseña:", bg='lightgreen',width = 300 , height = 2 ,font =('calibri', 13))
+label_from.pack()
+mail_usuario, pass_usuario = tk.StringVar(), tk.StringVar()
 
-mail_facturas('ldelgado@scienza.com.ar','Chewie2019!')
+input_mail = tk.Entry(root,textvariable=mail_usuario, width=75,bd=3,selectbackground='violet')
+input_mail.pack()
+input_pass = tk.Entry(root,textvariable=pass_usuario, width=75,bd=3,selectbackground='violet', show="*")
+input_pass.pack()
 
-#######################################################################################################
-########################################### INTERFAZ GRAFICA ##########################################
-#######################################################################################################
-# root = tk.Tk()
-# root.geometry('300x125')
-# root.title('OyP - Envio masivo - 2.0')
-# root.config(bg='blue')
-# label_from=tk.Label(root, text="Ingrese su mail y contraseña:", bg='lightgreen',width = 300 , height = 2 ,font =('calibri', 13))
-# label_from.pack()
-# mail_usuario, pass_usuario = tk.StringVar(), tk.StringVar()
+boton_enviar = tk.Button(root,text="Iniciar envío masivo",command=lambda: mail_facturas(input_mail.get(),input_pass.get()),bg='lightblue',font =('calibri', 12)) 
+boton_enviar.pack()
+root.mainloop()
 
-# input_mail = tk.Entry(root,textvariable=mail_usuario, width=75,bd=3,selectbackground='violet')
-# input_mail.pack()
-# input_pass = tk.Entry(root,textvariable=pass_usuario, width=75,bd=3,selectbackground='violet', show="*")
-# input_pass.pack()
 
-# boton_enviar = tk.Button(root,text="Iniciar envío masivo",command=lambda: mail_facturas(input_mail.get(),input_pass.get()),bg='lightblue',font =('calibri', 12)) 
-# boton_enviar.pack()
-# root.mainloop()
 
+# ---------- Notas 
+    #Version 2.0 para compilar 17.12
