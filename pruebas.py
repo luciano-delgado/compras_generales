@@ -19,7 +19,7 @@ def generar_texto(usu,fac,pro,fh):
     # df['Fecha emision'].str.center(width = 15, fillchar = '%')
     
     df2 = df
-    cuerpo_mail = f'Estimado {usu}, \n\nNecesitamos por favor que generen la recepción y/o autorizacion de las siguientes facturas: \n\n {df2} \n\n\n Muchas gracias.'
+    cuerpo_mail = f'Estimado/a {usu}, \n\nNecesitamos por favor que generen la recepción y/o autorizacion de las siguientes facturas: \n\n {df2} \n\n\n Muchas gracias.'
     #print(cuerpo_mail)
 
     return cuerpo_mail
